@@ -1,0 +1,8 @@
+[Unit]
+Description=Monitor touchscreen input
+
+[Path]
+PathChanged=/dev/input/touchscreen
+
+[Install]
+WantedBy=multi-user.target

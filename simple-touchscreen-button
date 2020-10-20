@@ -1,0 +1,36 @@
+#!/bin/bash
+ACTION=${ACTION:-echo Please set ACTION to desired action, e.g. shutdown -P now}
+MAX_X=${MAX_X:-50}
+MAX_Y=${MAX_Y:-50}
+MIN_PRESSURE=${MIN_PRESSURE:-100}
+MIN_TOUCH_TIME=${MIN_TOUCH_TIME:-10}
+
+set -e -u -E -o pipefail -o errtrace
+shopt -s extglob
+
+first_touch=0
+
+C="\ec"
+
+MIN_TOUCH_TIME="${MIN_TOUCH_TIME}0" # times 10
+
+while IFS=": " read timestamp x y junk ; do
+    if [[ "$timestamp" == *tslib* ]] ; then
+        echo 1>&2 "ERROR: $timestamp $x $y $junk"
+        sleep 3
+        exit 1
+    fi
+    timestamp=${timestamp//./} # convert to millisecs
+    timestamp=${timestamp%?????} # convert to decisecs (1/10 of sec)
+    if (( x < MAX_X && y < MAX_Y )) ; then
+        (( first_touch == 0 )) && first_touch=$timestamp
+        let touch_time=timestamp-first_touch 1
+        echo -e "${C}\n\n\tSHUTDOWN IN\n\n\t\t$((MIN_TOUCH_TIME - touch_time))\n\n\tDECISECONDS"
+        if (( touch_time >= MIN_TOUCH_TIME )) ; then
+            echo 1>&2 Running action "$ACTION"
+            exec $ACTION < /dev/null # exit via action
+        fi
+    else
+        first_touch=0
+    fi
+done >/dev/tty0 < <(exec stdbuf -oL -eL ts_print 2>&1)

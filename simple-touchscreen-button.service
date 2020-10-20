@@ -1,0 +1,12 @@
+[Unit]
+Description=Simple Touchscreen Button for Shutdown
+ConditionPathExists=/dev/input/touchscreen
+
+[Service]
+Restart=always
+Environment="ACTION=shutdown -P now"
+ExecStart=/root/simple-touchscreen-button/simple-touchscreen-button
+
+[Install]
+WantedBy=multi-user.target
+
